@@ -4,10 +4,11 @@
 // Readline class to handle line input.
 // This application itself is also licensed under the same MIT Licence. 
 
-var DefaultInputHtml = function(stack) {
+var DefaultInputHtml = function(prefix,stack,location) {
     var linePrompt = "";
     if(stack == 0) {
-      linePrompt += "<span class='prompt'> ></span>";
+      linePrompt += "<p class=\"response\">"+prefix+"@127.0.0.1"+ " "+location+"</p>"+
+      			"<span class='prompt'> ></span>";
     }
     else {
       for(var i=0; i <= stack; i++) {
