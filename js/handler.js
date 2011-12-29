@@ -4,7 +4,7 @@ var MasterHandler = function(subHandlers) {
 	this._rawCommand     = "";
 	this._commandStack   = 0;
 	this.subHandlersNames = subHandlers|| [];
-	this.subHandlersNames = this.subHandlersNames.concat(["help"]);
+	this.subHandlersNames = this.subHandlersNames.concat(["help","load","user"]);
 	this.subHandlers		={};
 };
 
@@ -28,7 +28,7 @@ MasterHandler.prototype = {
 				var tokens=inputString.split(" ");
 				if(this.subHandlersNames.include(tokens[0])){
 					if(this.subHandlers[tokens[0]]){
-						return {result:"Using Handler "+tokens[0]};
+						return this.subHandlers[tokens[0]]._process(inputString,callbackObj);
 					}else{
 						if(callbackObj!==false){
 							this.loadSubHandler(tokens[0],inputString,callbackObj);
@@ -39,7 +39,7 @@ MasterHandler.prototype = {
 						return false;
 					}
 				}else{
-					return {result:"Unknown Command."};
+					return {result:"shell: command not found."};
 				}
 			}catch(e){
 				return {result:"Error: "+e};
