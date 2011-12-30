@@ -58,14 +58,17 @@ MasterHandler.prototype = {
 			);
 		},
 		apply: function(inputString,callbackObj){
-			//try{
+			try{
 				if(this._commandStack===0){
 					if(inputString.length===0)
 						return {result:""};
 						var tokens=inputString.split(" ");
 						var v=tokens[0].indexOf(".");
 						if(v!=-1){
-							var obj=this.subHandlers[tokens[0].substring(0,v)][tokens[0].substring(v+1)];
+							var obj=this.subHandlers[tokens[0].substring(0,v)];
+							if(v!=tokens[0].length-1 && obj){
+								obj=this.subHandlers[tokens[0].substring(0,v)][tokens[0].substring(v+1)];
+							}
 							if(typeof obj!="undefined"){
 								return {result:obj.toString()+" ("+(typeof obj)+")"};
 							}else{
@@ -110,9 +113,9 @@ MasterHandler.prototype = {
 					}
 					return response;
 				}
-			//}catch(e){
-			//	return {result:"Error: "+e};
-			//}
+			}catch(e){
+				return {result:"Error: "+e};
+			}
 		},
 		loadHandlerResourceFile:function(f,success,error){
 			$.ajax({
