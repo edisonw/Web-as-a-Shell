@@ -324,14 +324,19 @@ tojson = function( x, indent , nolint , html){
     
 };
 
+sqlEscape=function(sql)
+{
+  if (sql == null)
+    return null;
+  return sql.replace("'", "''");
+};
+
 tojsonObject = function( x, indent , nolint , html){
-    if(html) {
-      var lineEnding = "<br/>";
-      var tabSpace   = "&nbsp;";
-    }
-    else {
-      var lineEnding = nolint ? " " : "\n";
-      var tabSpace = nolint ? "" : "\t";
+    var lineEnding = "<br/>";
+    var tabSpace   = "&nbsp;";
+    if(!html){
+      lineEnding = nolint ? " " : "\n";
+      tabSpace = nolint ? "" : "\t";
     }
     
     assert.eq( ( typeof x ) , "object" , "tojsonObject needs object, not [" + ( typeof x ) + "]" );
@@ -358,7 +363,10 @@ tojsonObject = function( x, indent , nolint , html){
     indent += tabSpace;
     
     var total = 0;
-    for ( var k in x ) total++;
+    var k=0;
+    for ( k in x ){ 
+    	total++;
+    }
     if ( total == 0 ) {
         s += indent + lineEnding;
     }

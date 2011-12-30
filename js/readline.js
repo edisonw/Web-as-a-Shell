@@ -22,7 +22,9 @@ ReadLine.prototype = {
 		initialize: function() {
 			this.addInputLine();
 		},
-
+		status:function(){
+			this.insertResponse("Current Command: "+this.inputHandler._currentCommand);
+		},
 		// Enter a new input line with proper behavior.
 		addInputLine: function(stackLevel) {
 			stackLevel = stackLevel || 0;
@@ -80,8 +82,9 @@ ReadLine.prototype = {
 				this.postProcessInput(value,response);
 		},
 		postProcessInput:function(value,response){
-
-			this.insertResponse(response.result);
+			if(!response || !this.insertResponse(response.result)){
+				return;
+			}
 
 			// Save to the command history...
 			if((lineValue = value.trim()) !== "") {
@@ -99,12 +102,16 @@ ReadLine.prototype = {
 		},
 		insertResponse: function(response) {
 			console.log(response);
-			if(response.length < 3) {
-				this.activeLine.parent().append("<p class='response'></p>");
+			if(response){
+				if(response.length < 3) {
+					this.activeLine.parent().append("<p class='response'></p>");
+				}
+				else {
+					this.activeLine.parent().append("<p class='response'>" + response + "</p>");
+				}
+				return true;
 			}
-			else {
-				this.activeLine.parent().append("<p class='response'>" + response + "</p>");
-			}
+			return false;
 		},
 
 		mockHandler: function(inputString) {
@@ -112,15 +119,6 @@ ReadLine.prototype = {
 		},
 
 		mockUser: function(){
-			return {name:"guest"};
+			return {id:0,name:"guest"};
 		}
 };
-
-$htmlFormat = function(obj) {
-	return tojson(obj, ' ', ' ', true);
-};
-var terminal;
-var handler= new MasterHandler();
-$(function() {
-	terminal= new ReadLine({htmlForInput: DefaultInputHtml,handler:handler});
-});
