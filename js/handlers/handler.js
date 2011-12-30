@@ -9,6 +9,7 @@ var MasterHandler = function(subHandlers) {
 	this.currentHandler		={};
 	this.ptr				=0;
 	this.allowCustomOptions =false;
+	this.version			="v.0.0.0";
 };
 
 MasterHandler.prototype = {
@@ -52,7 +53,6 @@ MasterHandler.prototype = {
 					callbackObj.postProcessInput(inputString,{result:"Command "+name+" handler failed to load"});
 			},
 			function(){
-				console.log("Here");
 				callbackObj.postProcessInput(inputString,{result:"shell: command \""+name+"\" not found."});
 			}
 			);
