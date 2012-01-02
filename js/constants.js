@@ -4,7 +4,11 @@
 // Readline class to handle line input.
 // This application itself is also licensed under the same MIT Licence. 
 
-var DefaultInputHtml = function(prefix,stack,location) {
+$htmlFormat = function(obj) {
+	return tojson(obj, ' ', ' ', true);
+};
+
+var DefaultInputHtml = function(prefix,stack,location,type) {
     var linePrompt = "";
     if(stack == 0) {
       linePrompt += "<p class=\"response\">"+prefix+"@127.0.0.1"+ " "+location+"</p>"+
@@ -15,10 +19,16 @@ var DefaultInputHtml = function(prefix,stack,location) {
         linePrompt += "<span class='prompt'>.</span>";
       }
     }
+    var t=(type)?type:'text';
     return "<div class='line'>" +
            linePrompt +
-           "<input type='text' class='readLine active' />" +
+           "<input type='"+t+"' class='readLine active' />" +
            "</div>";
+};
+
+var ResetHandlerStack =function(aHandler){
+	aHandler.ptr=0;
+	aHandler.current_command="";
 };
 
 var EnterKeyCode     = 13;

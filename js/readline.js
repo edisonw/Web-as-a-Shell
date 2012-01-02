@@ -26,9 +26,9 @@ ReadLine.prototype = {
 			this.insertResponse("Current Command: "+this.inputHandler._currentCommand);
 		},
 		// Enter a new input line with proper behavior.
-		addInputLine: function(stackLevel) {
+		addInputLine: function(stackLevel,type) {
 			stackLevel = stackLevel || 0;
-			this.terminal.append(this.htmlForInput(this.prefix,stackLevel,this.location));
+			this.terminal.append(this.htmlForInput(this.prefix,stackLevel,this.location,type));
 			var ctx = this;
 			ctx.activeLine = $(this.lineClass + '.active');
 
@@ -87,9 +87,11 @@ ReadLine.prototype = {
 			}
 
 			// Save to the command history...
-			if((lineValue = value.trim()) !== "") {
-				this.history.push(lineValue);
-				this.historyPtr = this.history.length;
+			if(!response.promptType=="password"){
+				if((lineValue = value.trim()) !== "") {
+					this.history.push(lineValue);
+					this.historyPtr = this.history.length;
+				}
 			}
 
 			// deactivate the line...
@@ -98,7 +100,7 @@ ReadLine.prototype = {
 			this.activeLine.removeClass('active');
 
 			// and add add a new command line.
-			this.addInputLine(response.stack);
+			this.addInputLine(response.stack,response.promptType);
 		},
 		insertResponse: function(response) {
 			console.log(response);

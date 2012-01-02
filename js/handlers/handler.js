@@ -57,8 +57,11 @@ MasterHandler.prototype = {
 			}
 			);
 		},
+		postResponse:function(input,response){
+			
+		},
 		apply: function(inputString,callbackObj){
-			try{
+			//try{
 				if(this._commandStack===0){
 					if(inputString.length===0)
 						return {result:""};
@@ -113,9 +116,9 @@ MasterHandler.prototype = {
 					}
 					return response;
 				}
-			}catch(e){
-				return {result:"Error: "+e};
-			}
+			//}catch(e){
+			//	return {result:"Error: "+e};
+			//}
 		},
 		loadHandlerResourceFile:function(f,success,error){
 			$.ajax({
