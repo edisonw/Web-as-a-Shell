@@ -1,7 +1,7 @@
 var UserHandler=function(){
 	this.ptr=0;
 	this.command="";
-	this.current_user;
+	this.current_user=null;
 	this.current_hash="";
 	this.temp;
 };
@@ -10,7 +10,7 @@ UserHandler.prototype={
 		var tokens=inputString.split(" ");
 		if(this.ptr==0){
 			if(tokens.length<2){
-				return {result:"Current User: "+terminal.user.name+". Supported Operations: create, login, logout, help"};
+				return {result:"Current User: "+terminal.prefix+". Supported Operations: create, login, logout, help"};
 			}else{
 				if(this[tokens[1]])
 					return this[tokens[1]](tokens,inputString);
@@ -22,22 +22,39 @@ UserHandler.prototype={
 		}
 	},
 	login:function(tokens,inputString){
-		if(tokens.length<3){
-			return {result:"Please enter a username."};
-		}else{ 
-			User.all().filter("name","=",tokens[2]).limit(1).list(null,function(results){
-				if(results.length==0){
-					//User does not exist.
-					terminal.postProcessInput(inputString,{result:tokens[2]+" does not exist, use \"user create "+tokens[2]+"\" if you want to create one."});
-				}else{
-					//Found user.
-					this.command="login";
-					this.current_user=results[0];
-					this.ptr=1;
-				}
+		if(this.current_user && this.current_user.name)
+			return {result:"You have already logged in."};
+		var here=this;
+		if(this.ptr==0){
+			if(tokens.length<3){
+				return {result:"Please enter a username."};
+			}else{ 
+				User.all().filter("name","=",tokens[2]).limit(1).list(null,function(results){
+					if(results.length==0){
+						//User does not exist.
+						handler.postProcessInput(inputString,{result:tokens[2]+" does not exist, use \"user create "+tokens[2]+"\" if you want to create one."});
+					}else{
+						//Found user.
+						here.command="login";
+						here.current_user=results[0];
+						here.ptr=1;
+						handler.postProcessInput(inputString,{result:"Password:",stack:1,more:true,command:"user",promptType:"password"});
+					}
+					return false;
+				});
 				return false;
-			});
-			return false;
+			}
+		}else{
+			if(this.current_user.key_phrase==Sha1.hash(inputString)){
+				here.current_hash=this.current_user.stored_hash;
+				here.ptr=0;
+				console.log("Hash:" +here.current_hash);
+				return {result:"Login successful.",location:here.current_user.home,prefix:this.current_user.name};
+			}else{
+				here.ptr=0;
+				this.current_user=null;
+				return {result:"Login failed."};	
+			}
 		}
 	},
 	create:function(tokens,inputString){
@@ -55,9 +72,9 @@ UserHandler.prototype={
 						here.command="create";
 						here.current_user=name;
 						here.ptr=1;
-						terminal.postProcessInput(inputString,{result:"Please enter a password for "+name+":",stack:1,more:true,command:"user",promptType:"password"});
+						handler.postProcessInput(inputString,{result:"Please enter a password for "+name+":",stack:1,more:true,command:"user",promptType:"password"});
 					}else{
-						terminal.postProcessInput(inputString,{result:name+" already exists.",stack:0});
+						handler.postProcessInput(inputString,{result:name+" already exists.",stack:0});
 					}
 				});
 				return false;	
@@ -79,29 +96,22 @@ UserHandler.prototype={
 						return {result:"Passwords do not match (\"kill user\" to reset):",stack:2,more:true,command:"user",promptType:"password"};
 					}else{
 						if(this.ptr==2){
-							this.ptr=3;
-							return {result:"Would you like to specify a key-phrase (info see help):",stack:3,more:true,command:"user",promptType:"password"};
-						}else{
-							this.current_hash=sjcl.encrypt(psw,(new Date().getTime()).toString()+":)").ct;
+							this.current_hash=sjcl.encrypt(psw,(new Date().getTime()).toString()+":)");
 							ResetHandlerStack(this);
-								var user=new User(
-									{name:this.current_user,
-									 stored_hash:this.current_hash,
-									 key_phrase:sjcl.encrypt(this.temp,psw).ct,
-									 home:"/"+sjcl.encrypt(this.temp,this.current_user).ct,
-									 defaultHandlers:"user"
-									});
-							persistence.add(user);
+							persistence.add(new User(
+								{name:this.current_user,
+								 stored_hash:this.current_hash,
+								 key_phrase:Sha1.hash(this.temp),
+								 home:"/"+this.current_user,
+								 defaultHandlers:""
+								})
+							);
 							this.temp="";
 							this.ptr=0;
 							persistence.flush(function() {
 								terminal.user=handler.subHandlers["user"].current_user;
 								terminal.prefix=handler.subHandlers["user"].current_user;
-								terminal.postProcessInput(inputString,{result:"User Created.",
-									change:{
-										
-									}
-								});
+								handler.postProcessInput(inputString,{result:"User Created."});
 							});
 							return false;
 						}

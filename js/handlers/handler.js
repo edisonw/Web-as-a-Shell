@@ -57,8 +57,17 @@ MasterHandler.prototype = {
 			}
 			);
 		},
-		postResponse:function(input,response){
-			
+		postProcessInput:function(inputString,response){
+			if(response){
+				this._commandStack=response.stack||0;
+				this._currentCommand=response.command||this._currentCommand;
+			}else{
+				this._commandStack=0;
+			}
+			if(this._commandStack===0){
+				this._currentCommand="";
+			}
+			terminal.postProcessInput(inputString,response);
 		},
 		apply: function(inputString,callbackObj){
 			//try{
@@ -85,6 +94,7 @@ MasterHandler.prototype = {
 									this._commandStack=response.stack||0;
 								else
 									this._commandStack=0;
+								console.log(this._commandStack);
 								if(this._commandStack>0){
 									this._currentCommand=tokens[0];
 								}else{

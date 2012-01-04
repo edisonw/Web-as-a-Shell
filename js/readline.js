@@ -10,10 +10,9 @@ var ReadLine = function(options) {
 	this.terminal     = $(this.options.terminalId || "#terminal");
 	this.lineClass    = this.options.lineClass || '.readLine';
 	this.history      = [];
+	this.prefix		  = "guest";
+	this.location	  = "~";
 	this.historyPtr   = 0;
-	this.user         = this.options.user || this.mockUser();
-	this.prefix       = this.user.name;
-	this.location     = "~";
 	this.initialize();
 };
 
@@ -26,9 +25,9 @@ ReadLine.prototype = {
 			this.insertResponse("Current Command: "+this.inputHandler._currentCommand);
 		},
 		// Enter a new input line with proper behavior.
-		addInputLine: function(stackLevel,type) {
+		addInputLine: function(stackLevel,type,prefix,location) {
 			stackLevel = stackLevel || 0;
-			this.terminal.append(this.htmlForInput(this.prefix,stackLevel,this.location,type));
+			this.terminal.append(this.htmlForInput(prefix||this.prefix,stackLevel,location||this.location,type));
 			var ctx = this;
 			ctx.activeLine = $(this.lineClass + '.active');
 
@@ -94,13 +93,18 @@ ReadLine.prototype = {
 				}
 			}
 
+			if(response.prefix)
+				this.prefix=response.prefix;
+			if(response.location)
+				this.location=response.location;
+			
 			// deactivate the line...
 			this.activeLine.value = "";
 			this.activeLine.attr({disabled: true});
 			this.activeLine.removeClass('active');
 
 			// and add add a new command line.
-			this.addInputLine(response.stack,response.promptType);
+			this.addInputLine(response.stack,response.promptType,response.prefix,response.location);
 		},
 		insertResponse: function(response) {
 			console.log(response);
@@ -118,9 +122,5 @@ ReadLine.prototype = {
 
 		mockHandler: function(inputString) {
 			return {result:inputString};
-		},
-
-		mockUser: function(){
-			return {id:0,name:"guest"};
 		}
 };
