@@ -7,6 +7,7 @@ var DropboxHandler=function(){
 	this.user="";
 	this.api_access_type="";
 	this.temp;
+	this.api_pref_key="dropbox_api";
 };
 DropboxHandler.prototype={
 	_process:function(inputString){
@@ -21,7 +22,7 @@ DropboxHandler.prototype={
 				if(!this.user){
 					return {result:"Dropbox API Wrapper. Please login first. "};
 				}else{
-					return {result:"Dropbox API Wrapper. Supported Operations: use,login, logout, Supported in Folder Operations: ls, cd, get, put."};
+					return {result:"Dropbox API Wrapper. Supported Operations: show, use,login, logout, Supported in Folder Operations: ls, cd, get, put."};
 				}
 			}else{
 				if(this[tokens[1]])
@@ -48,38 +49,31 @@ DropboxHandler.prototype={
 	login:function(tokens,inputString){
 		
 	},
+	show:function(tokens){
+
+		if(tokens.length<3){
+			
+		}
+	},
 	use:function(tokens,inputString){
-		var here=this;
-		if(this.ptr==0){
-			if(tokens.length<4){
-				return {result:"Please set your Dropbox API key and secret: \"dropbox use api_key api_secret\". <a href='https://www.dropbox.com/developers/apps' target='_blank'>Get a new one</a>"};
-			}else{ 
-				User_Preference.all().filter("user","=",this.user.name).filter("key",handler.subHandlers["user"].encrypt("dropbox.api_key")).limit(1).list(null,function(results){
-					if(results.length==0){
-						//User does not exist.
-						handler.postProcessInput(inputString,{result:tokens[2]+" does not exist, use \"user create "+tokens[2]+"\" if you want to create one."});
-					}else{
-						//Found user.
-						here.command="login";
-						here.current_user=results[0];
-						here.ptr=1;
-						handler.postProcessInput(inputString,{result:"Password:",stack:1,more:true,command:"user",promptType:"password"});
-					}
-					return false;
-				});
-				return false;
+		if(tokens.length<4){
+			return {result:"Please set your Dropbox API key and secret: \"dropbox use api_key api_secret\". <a href='https://www.dropbox.com/developers/apps' target='_blank'>Get a new one</a>"};
+		}else{ 
+			var key=handler.subHandlers["user"].encrypt(this.api_pref_key);
+			var val=handler.subHandlers["user"].encrypt(tokens[2]+" "+tokens[3]);
+			if(!val || !key){
+				return {result:"Cannot encrypt api information."};
 			}
-		}else{
-			if(this.current_user.key_phrase==Sha1.hash(inputString)){
-				here.current_hash=sjcl.decrypt(inputString, this.current_user.stored_hash);
-				here.ptr=0;
-				console.log("Hash:" +here.current_hash);
-				return {result:"Login successful.",location:here.current_user.home,prefix:this.current_user.name};
-			}else{
-				here.ptr=0;
-				this.current_user=null;
-				return {result:"Login failed."};	
-			}
+			persistence.add(new User_Preference(
+				{user:handler.subHandlers["user"].getUser().name,
+				 key:key,
+				 val:val
+				})
+			);
+			persistence.flush(function() {
+				handler.postProcessInput(inputString,{result:"Success."});
+			});
+			return false;
 		}
 	},
 	create:function(tokens,inputString){
