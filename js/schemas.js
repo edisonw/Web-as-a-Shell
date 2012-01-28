@@ -1,11 +1,15 @@
-var User = persistence.define('Users', {
-  name: "TEXT",
-  stored_hash: "TEXT",
-  key_phrase: "TEXT",
-  home: "TEXT",
-  defaultHandlers: "TEXT"
+var User = persistence.define('users_v1', {
+	name: "TEXT",
+	stored_hash: "TEXT",
+	key_phrase: "TEXT",
+	home: "TEXT",
+	defaultHandlers: "TEXT"
 });
-
+var User_Preference = persistence.define('user_preference_v1', {
+	uid: "TEXT",
+	key: "TEXT",
+	val: "TEXT"
+});
 //User has password.
 //Key is encrypted using the password.
 //The same key is used to encrypt other data for the user.

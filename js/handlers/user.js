@@ -12,18 +12,43 @@ UserHandler.prototype={
 			if(tokens.length<2){
 				return {result:"Current User: "+terminal.prefix+". Supported Operations: create, login, logout, help"};
 			}else{
-				if(this[tokens[1]])
+				if(this[tokens[1]]){
 					return this[tokens[1]](tokens,inputString);
-				else
+				}else{
 					return {result:"Invalid command to user handler."};
+				}
 			}
 		}else{
 			return this[this.command](tokens,inputString);
 		}
 	},
+	getUser:function(){
+		return this.current_user;
+	},
+	encrypt:function(value){
+		if(this.current_hash){
+			try{
+				return sjcl.encrypt(this.current_hash,value);
+			}catch(e){
+				return null;
+			}
+		}else{
+			return null;
+		}
+	},
+	decrypt:function(value){
+		if(this.current_hash){
+			try{
+				return sjcl.decrypt(this.current_hash,value);
+			}catch(e){
+				return null;
+			}
+		}else{
+			return null;
+		}
+			
+	},
 	login:function(tokens,inputString){
-		if(this.current_user && this.current_user.name)
-			return {result:"You have already logged in."};
 		var here=this;
 		if(this.ptr==0){
 			if(tokens.length<3){
@@ -46,7 +71,7 @@ UserHandler.prototype={
 			}
 		}else{
 			if(this.current_user.key_phrase==Sha1.hash(inputString)){
-				here.current_hash=this.current_user.stored_hash;
+				here.current_hash=sjcl.decrypt(inputString, this.current_user.stored_hash);
 				here.ptr=0;
 				console.log("Hash:" +here.current_hash);
 				return {result:"Login successful.",location:here.current_user.home,prefix:this.current_user.name};
@@ -96,7 +121,7 @@ UserHandler.prototype={
 						return {result:"Passwords do not match (\"kill user\" to reset):",stack:2,more:true,command:"user",promptType:"password"};
 					}else{
 						if(this.ptr==2){
-							this.current_hash=sjcl.encrypt(psw,(new Date().getTime()).toString()+":)");
+							this.current_hash=sjcl.encrypt(psw,(new Date().getTime()).toString()+here._generateHash());
 							ResetHandlerStack(this);
 							persistence.add(new User(
 								{name:this.current_user,
@@ -117,11 +142,18 @@ UserHandler.prototype={
 						}
 					}
 				}
-				//this.current_hash=sjcl.encrypt("password", "data");
 			}
 		}
 	},
-	help:function(){
+	_generateHash: function() {
+      /*jshint bitwise:false */
+      var S4 = function() {
+         return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
+      };
+      /*jshint bitwise:true */
+	      return S4()+S4()+S4()+S4()+S4();
+	},
+	help:function(tokens,inputString){
 		if(tokens.length<3){
 			return {result:"login: log into a different user.<br />logout: logout of current user, same thing as login as guest.<br />create: create a new user.<br /><br />The user class uses a stored hash as a key to decrypt any stored database information. The stored hash is protected by your password. Please remember your password as there is no reset function yet."};
 		}else{
