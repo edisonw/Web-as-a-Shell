@@ -1,15 +1,16 @@
-var MasterHandler = function(subHandlers) {
-	this._currentCommand = "";
+var MasterHandler = function (subHandlers) {
+	'use strict';
+	this.currentCommand = "";
 	this._rawCommand     = "";
 	this._commandStack   = 0;
-	this.subHandlersNames = subHandlers|| [];
+	this.subHandlersNames = subHandlers || [];
 	this.subHandlersNames = this.subHandlersNames.concat(["handler"]);
-	this.timeout 		 = 500;
-	this.subHandlers		={handler:this};
-	this.currentHandler		={};
-	this.ptr				=0;
-	this.allowCustomOptions =false;
-	this.version			="v.0.0.0";
+	this.timeout = 500;
+	this.subHandlers = {handler:this};
+	this.currentHandler		= {};
+	this.ptr				= 0;
+	this.allowCustomOptions = false;
+	this.version			= "v.0.0.0";
 };
 
 MasterHandler.prototype = {
@@ -60,12 +61,12 @@ MasterHandler.prototype = {
 		postProcessInput:function(inputString,response){
 			if(response){
 				this._commandStack=response.stack||0;
-				this._currentCommand=response.command||this._currentCommand;
+				this.currentCommand=response.command||this.currentCommand;
 			}else{
 				this._commandStack=0;
 			}
 			if(this._commandStack===0){
-				this._currentCommand="";
+				this.currentCommand="";
 			}
 			terminal.postProcessInput(inputString,response);
 		},
@@ -96,9 +97,9 @@ MasterHandler.prototype = {
 									this._commandStack=0;
 								console.log(this._commandStack);
 								if(this._commandStack>0){
-									this._currentCommand=tokens[0];
+									this.currentCommand=tokens[0];
 								}else{
-									this._currentCommand="";
+									this.currentCommand="";
 								}
 								return response;
 							}else{
@@ -115,14 +116,14 @@ MasterHandler.prototype = {
 							return false;
 						}
 				}else{
-					var response=this.subHandlers[this._currentCommand]._process(inputString,callbackObj);
+					var response=this.subHandlers[this.currentCommand]._process(inputString,callbackObj);
 					if(response){
 						this._commandStack=response.stack||0;
 					}else{
 						this._commandStack=0;
 					}
 					if(this._commandStack===0){
-						this._currentCommand="";
+						this.currentCommand="";
 					}
 					return response;
 				}
@@ -139,5 +140,26 @@ MasterHandler.prototype = {
 			    timeout : this.timeout,
 			    error:error
 			});
+		},
+		load: function (type,f, cb) {
+			'use strict';
+			var name=f;
+			f="./js/"+type+"/"+f+".js";
+			try {
+				$.ajax({
+					url: f,
+					dataType: "script",
+					crossDomain: true,
+					success: function () {
+						cb(true);
+					},
+					error: function () {
+						cb(false);
+					}
+				});
+			} catch (e) {
+				cb("Cannot load " + f + " : " + e);
+			}
+			return false;
 		}
 };

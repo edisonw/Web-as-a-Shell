@@ -84,7 +84,7 @@ persistence.store.memory.config = function(persistence, dbname) {
 
   persistence.transaction = function(callback) {
     setTimeout(function() {
-        callback({executeSql: function() {} });
+        callback(null, {executeSql: function() {} });
       }, 0);
   };
 
@@ -228,10 +228,13 @@ persistence.store.memory.config = function(persistence, dbname) {
       persistence.get(item, inverseProperty).remove(this._obj, true); 
     }
   };
+
+  try {
+    exports.getSession = function() { return persistence; };
+  } catch(e) {}
 };
 
 try {
   exports.config = persistence.store.memory.config;
-  exports.getSession = function() { return persistence; };
 } catch(e) {}
 

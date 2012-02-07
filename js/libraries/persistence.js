@@ -25,8 +25,8 @@
 
 if (typeof exports !== 'undefined') {
 	exports.createPersistence = function() {
-		return initPersistence({})
-	}
+		return initPersistence({});
+	};
 	var singleton;
 	exports.__defineGetter__("persistence", function () {
     	if (!singleton)
@@ -309,11 +309,14 @@ persistence.get = function(arg1, arg2) {
       array = array.slice(0); // Just to be sure
       function processOne() {
         var item = array.pop();
-        fn(item, function(result, err) {
+        fn(item, function(err, result) {
+            if(err) {
+              callback(err);
+            }
             if(array.length > 0) {
               processOne();
             } else {
-              callback(result, err);
+              callback(err, result);
             }
           });
       }
@@ -589,7 +592,7 @@ persistence.get = function(arg1, arg2) {
        *
        * @param tx database transaction to use, leave out to start a new one
        * @param props a property specification
-       * @param callback(result)
+       * @param callback(err, result)
        */
       Entity.prototype.selectJSON = function(tx, props, callback) {
         var that = this;
@@ -603,7 +606,8 @@ persistence.get = function(arg1, arg2) {
         callback = args.callback;
 
         if(!tx) {
-          this._session.transaction(function(tx) {
+          this._session.transaction(function(err, tx) {
+              if (err) return callback && callback(err);
               that.selectJSON(tx, props, callback);
             });
           return;
@@ -689,9 +693,15 @@ persistence.get = function(arg1, arg2) {
 
         persistence.asyncForEach(properties, function(p, callback) {
           if(meta.hasOne[p]) {
-            that.fetch(tx, p, function(obj) {
+            that.fetch(tx, p, function(err, obj) {
+                if(err) {
+                  return callback(err);
+                }
                 if(obj) {
-                  buildJSON(obj, tx, includeProperties[p], function(result) {
+                  buildJSON(obj, tx, includeProperties[p], function(err, result) {
+                      if(err) {
+                        return callback(err);
+                      }
                       item[p] = result;
                       callback();
                     });
@@ -701,7 +711,10 @@ persistence.get = function(arg1, arg2) {
                 }
               });
           } else if(meta.hasMany[p]) {
-            persistence.get(that, p).list(function(objs) {
+            persistence.get(that, p).list(function(err, objs) {
+                if(err) {
+                  return callback(err);
+                }
                 item[p] = [];
                 persistence.asyncForEach(objs, function(obj, callback) {
                     var obj = objs.pop();
@@ -709,7 +722,10 @@ persistence.get = function(arg1, arg2) {
                       item[p].push({id: obj.id});
                       callback();
                     } else {
-                      buildJSON(obj, tx, includeProperties[p], function(result) {
+                      buildJSON(obj, tx, includeProperties[p], function(err, result) {
+                          if(err) {
+                            return callback(err);
+                          }
                           item[p].push(result);
                           callback();
                         });
@@ -717,8 +733,8 @@ persistence.get = function(arg1, arg2) {
                   }, callback);
               });
           }
-        }, function() {
-          callback(item);
+        }, function(err) {
+          callback(err, item);
         });
       }; // End of buildJson
 
@@ -736,28 +752,29 @@ persistence.get = function(arg1, arg2) {
         var session = this._session;
 
         if(!tx) {
-          session.transaction(function(tx) {
+          session.transaction(function(err, tx) {
+              if (err) return callback(err);
               that.fetch(tx, rel, callback);
             });
           return;
         }
         if(!this._data[rel]) { // null
           if(callback) {
-            callback(null);
+            callback(null, null);
           }
         } else if(this._data_obj[rel]) { // already loaded
           if(callback) {
-            callback(this._data_obj[rel]);
+            callback(null, this._data_obj[rel]);
           }
         } else {
           var type = meta.hasOne[rel].type;
           if (type.meta.isMixin) {
             type = getEntity(this._data[rel + '_class']);
           }
-          type.load(session, tx, this._data[rel], function(obj) {
+          type.load(session, tx, this._data[rel], function(err, obj) {
               that._data_obj[rel] = obj;
               if(callback) {
-                callback(obj);
+                callback(err, obj);
               }
             });
         }
@@ -795,7 +812,8 @@ persistence.get = function(arg1, arg2) {
         callback = args.callback;
 
         if(!tx) {
-          session.transaction(function(tx) {
+          session.transaction(function(err, tx) {
+              if (err) return callback(err);
               Entity.fromSelectJSON(session, tx, jsonObj, callback);
             });
           return;
@@ -832,7 +850,10 @@ persistence.get = function(arg1, arg2) {
           }
           persistence.asyncForEach(expensiveProperties, function(p, callback) {
               if(meta.hasOne[p]) {
-                meta.hasOne[p].type.fromSelectJSON(session, tx, jsonObj[p], function(result) {
+                meta.hasOne[p].type.fromSelectJSON(session, tx, jsonObj[p], function(err, result) {
+                    if(err) {
+                      return callback(err);
+                    }
                     persistence.set(obj, p, result);
                     callback();
                   });
@@ -841,9 +862,15 @@ persistence.get = function(arg1, arg2) {
               var ar = jsonObj[p].slice(0);
               var PropertyEntity = meta.hasMany[p].type;
               // get all current items
-              coll.list(tx, function(currentItems) {
+              coll.list(tx, function(err, currentItems) {
+                  if(err) {
+                    return callback(err);
+                  }
                   persistence.asyncForEach(ar, function(item, callback) {
-                      PropertyEntity.fromSelectJSON(session, tx, item, function(result) {
+                      PropertyEntity.fromSelectJSON(session, tx, item, function(err, result) {
+                          if(err) {
+                            return callback(err);
+                          }
                           // Check if not already in collection
                           for(var i = 0; i < currentItems.length; i++) {
                             if(currentItems[i].id === result.id) {
@@ -854,13 +881,13 @@ persistence.get = function(arg1, arg2) {
                           coll.add(result);
                           callback();
                         });
-                    }, function() {
-                      callback();
+                    }, function(err) {
+                      callback(err);
                     });
                 });
             }
-          }, function() {
-            callback(obj);
+          }, function(err) {
+            callback(err, obj);
           });
         }
         if(jsonObj.id) {
@@ -895,17 +922,18 @@ persistence.get = function(arg1, arg2) {
         callback = args.callback;
 
         if(property === 'id' && value in session.trackedObjects) {
-          callback(session.trackedObjects[value]);
+          callback(null, session.trackedObjects[value]);
           return;
         }
         if(!tx) {
-          session.transaction(function(tx) {
+          session.transaction(function(err, tx) {
+              if (err) return callback(err);
               Entity.findBy(session, tx, property, value, callback);
             });
           return;
         }
-        Entity.all(session).filter(property, "=", value).one(tx, function(obj) {
-            callback(obj);
+        Entity.all(session).filter(property, "=", value).one(tx, function(err, obj) {
+            callback(err, obj);
           });
       }
 
@@ -1073,9 +1101,12 @@ persistence.get = function(arg1, arg2) {
         }
       }
 
-      var result = {};
+      var result = {}, session = this;
       persistence.asyncParForEach(entities, function(Entity, callback) {
-          Entity.all().list(tx, function(all) {
+          Entity.all(session).list(tx, function(err, all) {
+              if(err) {
+                return callback(err);
+              }
               var items = [];
               persistence.asyncParForEach(all, function(e, callback) {
                   var rec = {};
@@ -1100,7 +1131,10 @@ persistence.get = function(arg1, arg2) {
                   }
                   persistence.asyncParForEach(collArray, function(collP, callback) {
                       var coll = persistence.get(e, collP);
-                      coll.list(tx, function(results) {
+                      coll.list(tx, function(err, results) {
+                          if(err) {
+                            return callback(err);
+                          }
                           rec[collP] = results.map(function(r) { return r.id; });
                           callback();
                         });
@@ -1114,8 +1148,8 @@ persistence.get = function(arg1, arg2) {
                   callback();
                 });
             });
-        }, function() {
-          callback(result);
+        }, function(err) {
+          callback(err, result);
         });
     };
 
@@ -1145,7 +1179,7 @@ persistence.get = function(arg1, arg2) {
           var instances = dump[entityName];
           for(var i = 0; i < instances.length; i++) {
             var instance = instances[i];
-            var ent = new Entity();
+            var ent = new Entity(this);
             ent.id = instance.id;
             for(var p in instance) {
               if(instance.hasOwnProperty(p)) {
@@ -1173,7 +1207,10 @@ persistence.get = function(arg1, arg2) {
       }
       session.flush(tx, function() {
           persistence.asyncForEach(collItemsToAdd, function(collItem, callback) {
-              collItem.Entity.load(session, tx, collItem.id, function(obj) {
+              collItem.Entity.load(session, tx, collItem.id, function(err, obj) {
+                  if(err) {
+                    return callback(err);
+                  }
                   collItem.coll.add(obj);
                   callback();
                 });
@@ -1198,8 +1235,12 @@ persistence.get = function(arg1, arg2) {
       tx = args.tx;
       entities = args.entities;
       callback = args.callback;
-      this.dump(tx, entities, function(obj) {
-          callback(JSON.stringify(obj));
+      this.dump(tx, entities, function(err, obj) {
+          try {
+            callback(null, JSON.stringify(obj));
+          } catch(e) {
+            callback(e);
+          }
         });
     };
 
@@ -1218,7 +1259,11 @@ persistence.get = function(arg1, arg2) {
       tx = args.tx;
       jsonDump = args.jsonDump;
       callback = args.callback;
-      this.load(tx, JSON.parse(jsonDump), callback);
+      try {
+        this.load(tx, JSON.parse(jsonDump), callback);
+      } catch(e) {
+        callback(e);
+      }
     };
 
 
@@ -1682,8 +1727,10 @@ persistence.get = function(arg1, arg2) {
       // Add global listener (TODO: memory leak waiting to happen!)
       var session = this._session;
       c = session.uniqueQueryCollection(c);
-      //session.subscribeToGlobalPropertyListener(c, this._entityName, property);
-      return session.uniqueQueryCollection(c);
+      if (typeof exports !== 'undefined') { // for node
+        session.subscribeToGlobalPropertyListener(c, this._entityName, property);
+      }
+      return c;
     };
 
     /**
@@ -1775,7 +1822,7 @@ persistence.get = function(arg1, arg2) {
      *
      * @param tx database transaction to use, leave out to start a new one
      * @param props a property specification
-     * @param callback(result)
+     * @param callback(err, result)
      */
     QueryCollection.prototype.selectJSON = function(tx, props, callback) {
       var args = argspec.getArgs(arguments, [
@@ -1790,22 +1837,26 @@ persistence.get = function(arg1, arg2) {
       callback = args.callback;
 
       if(!tx) {
-        session.transaction(function(tx) {
+        session.transaction(function(err, tx) {
+            if (err) return callback(err);
             that.selectJSON(tx, props, callback);
           });
         return;
       }
       var Entity = getEntity(this._entityName);
       // TODO: This could do some clever prefetching to make it more efficient
-      this.list(function(items) {
+      this.list(function(err, items) {
+          if(err) {
+            return callback(err);
+          }
           var resultArray = [];
           persistence.asyncForEach(items, function(item, callback) {
-              item.selectJSON(tx, props, function(obj) {
+              item.selectJSON(tx, props, function(err, obj) {
                   resultArray.push(obj);
-                  callback();
+                  callback(err);
                 });
-            }, function() {
-              callback(resultArray);
+            }, function(err) {
+              callback(err, resultArray);
             });
         });
     };
@@ -1874,9 +1925,9 @@ persistence.get = function(arg1, arg2) {
       tx = args.tx;
       eachFn = args.eachFn;
 
-      this.list(tx, function(results) {
+      this.list(tx, function(err, results) {
           for(var i = 0; i < results.length; i++) {
-            eachFn(results[i]);
+            eachFn(err, results[i]);
           }
         });
     }
@@ -1894,11 +1945,15 @@ persistence.get = function(arg1, arg2) {
 
       var that = this;
 
-      this.limit(1).list(tx, function(results) {
+      this.limit(1).list(tx, function(err, results) {
+          if(err) {
+            oneFn(err);
+            return;
+          }
           if(results.length === 0) {
-            oneFn(null);
+            oneFn(null, null);
           } else {
-            oneFn(results[0]);
+            oneFn(null, results[0]);
           }
         });
     }
@@ -1911,7 +1966,7 @@ persistence.get = function(arg1, arg2) {
      * to represent all instances of an entity type
      * @constructor
      */
-    function AllDbQueryCollection (session, entityName) {
+    function AllDbQueryCollection(session, entityName) {
       this.init(session, entityName, AllDbQueryCollection);
     }
 
@@ -2075,7 +2130,7 @@ persistence.get = function(arg1, arg2) {
         results.reverse();
       }
       if(callback) {
-        callback(results);
+        callback(null, results);
       } else {
         return results;
       }
@@ -2087,7 +2142,7 @@ persistence.get = function(arg1, arg2) {
       }
       this._items = [];
       this.triggerEvent('change', this);
-      if(callback) callback();
+      if(callback) callback(null);
     };
 
     LocalQueryCollection.prototype.count = function(tx, callback) {
@@ -2101,7 +2156,7 @@ persistence.get = function(arg1, arg2) {
       var result = this.list();
 
       if(callback) {
-        callback(result.length);
+        callback(null, result.length);
       } else {
         return result.length;
       }

@@ -143,12 +143,15 @@ function config(persistence, dialect) {
 
     if(!tx) {
       var session = this;
-      this.transaction(function(tx) { session.schemaSync(tx, callback, emulate); });
+      this.transaction(function(err, tx) {
+          if (err) return callback && callback(err);
+          session.schemaSync(tx, callback, emulate);
+        });
       return;
     }
     var queries = [], meta, colDefs, otherMeta, tableName;
 	
-	var tm = persistence.typeMapper;
+    var tm = persistence.typeMapper;
     var entityMeta = persistence.getEntityMeta();
     for (var entityName in entityMeta) {
       if (entityMeta.hasOwnProperty(entityName)) {
@@ -209,10 +212,10 @@ function config(persistence, dialect) {
     }
     if(emulate) {
       // Done
-      callback(tx);
+      callback(null, tx);
     } else {
-      executeQueriesSeq(tx, queries, function(_, err) {
-          callback(tx, err);
+      executeQueriesSeq(tx, queries, function(err) {
+          callback(err, tx);
         });
     }
   };
@@ -235,7 +238,10 @@ function config(persistence, dialect) {
 
     var session = this;
     if(!tx) {
-      this.transaction(function(tx) { session.flush(tx, callback); });
+      this.transaction(function(err, tx) {
+          if (err) callback && callback(err);
+          session.flush(tx, callback);
+        });
       return;
     }
     var fns = persistence.flushHooks;
@@ -260,8 +266,8 @@ function config(persistence, dialect) {
         if(callback) {
           persistence.asyncParForEach(removeObjArray, function(obj, callback) {
               remove(obj, tx, callback);
-            }, function(result, err) {
-              if (err) return callback(result, err);
+            }, function(err, result) {
+              if (err) return callback(err, result);
               persistence.asyncParForEach(persistObjArray, function(obj, callback) {
                   save(obj, tx, callback);
                 }, callback);
@@ -290,7 +296,10 @@ function config(persistence, dialect) {
 
     var session = this;
     if(!tx) {
-      session.transaction(function(tx) { session.reset(tx, callback); });
+      session.transaction(function(err, tx) {
+        if (err) return callback && callback(err);
+        session.reset(tx, callback);
+      });
       return;
     }
     // First emulate syncing the schema (to know which tables were created)
@@ -303,13 +312,13 @@ function config(persistence, dialect) {
         }
         function dropOneTable () {
           var tableName = tableArray.pop();
-          tx.executeSql("DROP TABLE IF EXISTS `" + tableName + "`", null, function () {
+          tx.executeSql("DROP TABLE IF EXISTS `" + tableName + "`", null, function (err) {
               if (tableArray.length > 0) {
                 dropOneTable();
               } else {
-                cb();
+                cb(err);
               }
-            }, cb);
+            });
         }
         if(tableArray.length > 0) {
           dropOneTable();
@@ -317,10 +326,10 @@ function config(persistence, dialect) {
           cb();
         }
 		
-        function cb(result, err) {
+        function cb(err, result) {
           session.clean();
           persistence.generatedTables = {};
-          if (callback) callback(result, err);
+          if (callback) callback(err, result);
         }
       }, true);
   };
@@ -400,10 +409,10 @@ function config(persistence, dialect) {
           qs.push(tm.outIdVar('?'));
           var sql = "INSERT INTO `" + obj._type + "` (" + properties.join(", ") + ") VALUES (" + qs.join(', ') + ")";
           obj._new = false;
-          tx.executeSql(sql, values, callback, callback);
+          tx.executeSql(sql, values, callback);
         } else {
           var sql = "UPDATE `" + obj._type + "` SET " + propertyPairs.join(',') + " WHERE id = " + tm.outId(obj.id);
-          tx.executeSql(sql, values, callback, callback);
+          tx.executeSql(sql, values, callback);
         }
       });
   }
@@ -412,7 +421,7 @@ function config(persistence, dialect) {
 
   function remove (obj, tx, callback) {
     var meta = persistence.getMeta(obj._type);
-	var tm = persistence.typeMapper;
+    var tm = persistence.typeMapper;
     var queries = [["DELETE FROM `" + obj._type + "` WHERE id = " + tm.outId(obj.id), null]];
     for (var rel in meta.hasMany) {
       if (meta.hasMany.hasOwnProperty(rel) && meta.hasMany[rel].manyToMany) {
@@ -437,14 +446,10 @@ function config(persistence, dialect) {
       callbackArgs.push(arguments[i]);
     }
     persistence.asyncForEach(queries, function(queryTuple, callback) {
-        tx.executeSql(queryTuple[0], queryTuple[1], callback, function(_, err) {
-            console.log(err.message);
-            callback(_, err);
-          });
-      }, function(result, err) {
+        tx.executeSql(queryTuple[0], queryTuple[1], callback);
+      }, function(err, result) {
         if (err && callback) {
-          callback(result, err);
-          return;
+          return callback(err, result);
         }
         if(callback) callback.apply(null, callbackArgs);
       });
@@ -582,7 +587,8 @@ function config(persistence, dialect) {
     var that = this;
     var session = this._session;
     if(!tx) { // no transaction supplied
-      session.transaction(function(tx) {
+      session.transaction(function(err, tx) {
+          if (err) return callback && callback(err);
           that.list(tx, callback);
         });
       return;
@@ -681,7 +687,10 @@ function config(persistence, dialect) {
       sql += " OFFSET " + this._skip;
     }
     session.flush(tx, function () {
-        tx.executeSql(sql, args, function (rows) {
+        tx.executeSql(sql, args, function(err, rows) {
+            if(err) {
+              return callback(err);
+            }
             var results = [];
             if(that._reverse) {
               rows.reverse();
@@ -698,7 +707,7 @@ function config(persistence, dialect) {
               results.push(e);
               session.add(e);
             }
-            callback(results);
+            callback(null, results);
             that.triggerEvent('list', that, results);
           });
       });
@@ -722,7 +731,8 @@ function config(persistence, dialect) {
     var that = this;
     var session = this._session;
     if(!tx) { // no transaction supplied
-      session.transaction(function(tx) {
+      session.transaction(function(err, tx) {
+          if (err) return callback && callback(err);
           that.destroyAll(tx, callback);
         });
       return;
@@ -760,14 +770,17 @@ function config(persistence, dialect) {
     var args2 = args.slice(0);
 
     session.flush(tx, function () {
-        tx.executeSql(selectSql, args, function(results) {
+        tx.executeSql(selectSql, args, function(err, results) {
+            if(err) {
+              return callback(err);
+            }
             for(var i = 0; i < results.length; i++) {
               delete session.trackedObjects[results[i].id];
               session.objectsRemoved.push({id: results[i].id, entity: entityName});
             }
             that.triggerEvent('change', that);
-            tx.executeSql(deleteSql, args2, callback, callback);
-          }, callback);
+            tx.executeSql(deleteSql, args2, callback);
+          });
       });
   };
 
@@ -791,7 +804,8 @@ function config(persistence, dialect) {
       tx = null;
     } 
     if(!tx) { // no transaction supplied
-      session.transaction(function(tx) {
+      session.transaction(function(err, tx) {
+          if (err) return callback && callback(err);
           that.count(tx, callback);
         });
       return;
@@ -806,12 +820,12 @@ function config(persistence, dialect) {
       persistence.asyncForEach(meta.mixedIns, function(realMeta, next) {
         var query = that.clone();
         query._entityName = realMeta.name;
-        query.count(tx, function(count) {
+        query.count(tx, function(err, count) {
           result += count;
-          next();
+          next(err);
         });
-      }, function() {
-        callback(result);
+      }, function(err) {
+        callback(err, result);
       });
       return;
     }    
@@ -831,8 +845,11 @@ function config(persistence, dialect) {
     var sql = "SELECT COUNT(*) AS cnt FROM `" + entityName + "` AS `root` " + joinSql + " " + whereSql;
 
     session.flush(tx, function () {
-        tx.executeSql(sql, args, function(results) {
-            callback(parseInt(results[0].cnt, 10));
+        tx.executeSql(sql, args, function(err, results) {
+            if(err) {
+              return callback(err);
+            }
+            callback(null, parseInt(results[0].cnt, 10));
           });
       });
   };

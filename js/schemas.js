@@ -5,7 +5,7 @@ var User = persistence.define('users_v1', {
 	home: "TEXT",
 	defaultHandlers: "TEXT"
 });
-var User_Preference = persistence.define('user_preference_v3', {
+var User_Preference = persistence.define('user_preference_v4', {
 	user: "TEXT",
 	key: "TEXT",
 	val: "TEXT",

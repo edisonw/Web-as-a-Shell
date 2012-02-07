@@ -65,7 +65,7 @@ persistence.store.websql.config = function(persistence, dbname, description, siz
 
     that.transaction = function (fn) {
       return conn.transaction(function (sqlt) {
-          return fn(persistence.db.html5.transaction(sqlt));
+          return fn(null, persistence.db.html5.transaction(sqlt));
         });
     };
     return that;
@@ -73,19 +73,21 @@ persistence.store.websql.config = function(persistence, dbname, description, siz
 
   persistence.db.html5.transaction = function (t) {
     var that = {};
-    that.executeSql = function (query, args, successFn, errorFn) {
+    that.executeSql = function(query, args, callback) {
       if(persistence.debug) {
         console.log(query, args);
       }
-      t.executeSql(query, args, function (_, result) {
-          if (successFn) {
+      t.executeSql(query, args, function(_, result) {
+          if (callback) {
             var results = [];
             for ( var i = 0; i < result.rows.length; i++) {
               results.push(result.rows.item(i));
             }
-            successFn(results);
+            callback(null, results);
           }
-        }, errorFn);
+        }, function(err) {
+          callback(err);
+        });
     };
     return that;
   };
@@ -98,7 +100,7 @@ persistence.store.websql.config = function(persistence, dbname, description, siz
 
     that.transaction = function (fn) {
       return conn.transaction(function (sqlt) {
-          return fn(persistence.db.html5Sync.transaction(sqlt));
+          return fn(null, persistence.db.html5Sync.transaction(sqlt));
         });
     };
     return that;
@@ -106,7 +108,7 @@ persistence.store.websql.config = function(persistence, dbname, description, siz
 
   persistence.db.html5Sync.transaction = function (t) {
     var that = {};
-    that.executeSql = function (query, args, successFn, errorFn) {
+    that.executeSql = function (query, args, callback) {
       if (args == null) args = [];
 
       if(persistence.debug) {
@@ -115,12 +117,12 @@ persistence.store.websql.config = function(persistence, dbname, description, siz
 
       var result = t.executeSql(query, args);
       if (result) {
-        if (successFn) {
+        if (callback) {
           var results = [];
           for ( var i = 0; i < result.rows.length; i++) {
             results.push(result.rows.item(i));
           }
-          successFn(results);
+          callback(null, results);
         }
       }
     };
@@ -142,12 +144,12 @@ persistence.store.websql.config = function(persistence, dbname, description, siz
 
   persistence.db.gears.transaction = function (conn) {
     var that = {};
-    that.executeSql = function (query, args, successFn, errorFn) {
+    that.executeSql = function (query, args, callback) {
       if(persistence.debug) {
         console.log(query, args);
       }
       var rs = conn.execute(query, args);
-      if (successFn) {
+      if (callback) {
         var results = [];
         while (rs.isValidRow()) {
           var result = {};
@@ -157,7 +159,7 @@ persistence.store.websql.config = function(persistence, dbname, description, siz
           results.push(result);
           rs.next();
         }
-        successFn(results);
+        callback(null, results);
       }
     };
     return that;

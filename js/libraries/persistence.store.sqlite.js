@@ -31,12 +31,12 @@ exports.config = function(persistence, dbPath) {
       }
       var tx = transaction(conn);
       if (explicitCommit) {
-        tx.executeSql("START TRANSACTION", null, function(){
-          fn(tx)
+        tx.executeSql("START TRANSACTION", null, function(err, result){
+          fn(err, tx);
         });
       }
       else 
-        fn(tx);
+        fn(null, tx);
     };
 
     session.close = function(cb) {
@@ -49,21 +49,19 @@ exports.config = function(persistence, dbPath) {
   function transaction(conn){
     var that = {};
     // TODO: add check for db opened or closed
-    that.executeSql = function(query, args, successFn, errorFn){
+    that.executeSql = function(query, args, callback){
       function cb(err, result){
         if (err) {
           log(err.message);
           that.errorHandler && that.errorHandler(err);
-          errorFn && errorFn(null, err);
+          callback && callback(err);
           return;
         }
-        if (successFn) {
-          successFn(result);
-        }
+        callback && callback(err, result);
       }
       if (persistence.debug) {
         sys.print(query + "\n");
-        args && args.length > 0 && sys.print(args.join(",") + "\n")
+        args && args.length > 0 && sys.print(args.join(",") + "\n");
       }
       if (!args) {
         conn.execute(query, cb);
@@ -71,20 +69,20 @@ exports.config = function(persistence, dbPath) {
       else {
         conn.execute(query, args, cb);
       }
-    }
+    };
     
     that.commit = function(session, callback){
       session.flush(that, function(){
         that.executeSql("COMMIT", null, callback);
-      })
-    }
+      });
+    };
     
     that.rollback = function(session, callback){
-      that.executeSql("ROLLBACK", null, function() {
+      that.executeSql("ROLLBACK", null, function(err, result) {
         session.clean();
-        callback();
+        callback(err);
       });
-    }
+    };
     return that;
   }
   
@@ -99,6 +97,7 @@ exports.config = function(persistence, dbPath) {
       var defs = [];
       for(var i = 0; i < columns.length; i++) {
         var column = columns[i];
+        if (column[1] === 'BIGINT') column[1] = 'TEXT';
         defs.push("`" + column[0] + "` " + tm.columnType(column[1]) + (column[2] ? " " + column[2] : ""));
       }
       sql += defs.join(", ");
