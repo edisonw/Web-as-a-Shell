@@ -100,15 +100,19 @@ UserHandler.prototype = {
 				if (name.length < 3) {
 					return {result: "Please enter a name that is at least 3 charaters."};
 				}
-				User.all().filter("name", "=", tokens[2]).limit(1).list(null, function (results) {
-					if (results.length === 0) {
-						here.command = "create";
-						here.current_user = name;
-						here.ptr = 1;
-						handler.postProcessInput(inputString,
-							{result: "Please enter a password for " + name + ":", stack: 1, more: true, command: "user", promptType: "password"});
-					} else {
-						handler.postProcessInput(inputString, {result: name + " already exists.", stack: 0});
+				User.all().filter("name", "=", tokens[2]).limit(1).list(null, function (err,results) {
+					if(err){
+						handler.postProcessInput(inputString, {result: "Cannot access the database: "+err, stack: 0});
+					}else{
+						if (results.length === 0) {
+							here.command = "create";
+							here.current_user = name;
+							here.ptr = 1;
+							handler.postProcessInput(inputString,
+								{result: "Please enter a password for " + name + ":", stack: 1, more: true, command: "user", promptType: "password"});
+						} else {
+							handler.postProcessInput(inputString, {result: name + " already exists.", stack: 0});
+						}
 					}
 				});
 				return false;
