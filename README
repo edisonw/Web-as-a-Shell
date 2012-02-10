@@ -2,5 +2,34 @@ How to use Web as a Shell?
 
 1. Download/clone the code to a local directory.
 
-2. Open index.html in Chrome and enjoy.
+2. Open index.html in Chrome and enjoy. -there's no server side of this. 
 
+
+* Commands are handled by "handlers", which are automatic loaded when called. They can be dynamically dropped into ./js/handlers. For example, all commands that starts with user will be handled by user.js inside handlers folder.
+
+* Commands can interact with other commands just like you would do it in a shell.
+
+* To store sensitive information, use the user command. 
+
+Initial Goal: 
+
+user.js - handles user creation, login, and key management. 
+----------
+1. user create username - create a user and generate a key for encrypting user data, all the user data are encrypted using this key, the key itself is encrypted using the password.
+2. user login username - login as username, upon successful login, the key will be decrypted for the current session.
+
+dropbox.js - uses user handler to store user dropbox information and acts as a wrapper for dropbox api.
+----------
+1. dorpbox use api_key api_secret to initialize the handler. - one time. 
+2. dropbox login username - to authenticate an account for the current api. -one time.
+3. dropbox cd ... allows dropbox to act as a folder and interface with cd.js. 
+3. dropbox ls ... allows dropbox to act as a folder and interface with ls.js. 
+
+cd.js - allows changing the base handler and make shortcuts, perhaps for folder options.
+---------
+1. cd handler_name will make the rest of the cd command to be handled as "handler_name cd ..." 
+2. cd ~ will reset the handler for cd.
+
+ls.js - allows changing the base handler and make shortcuts, perhaps for folder options.
+---------
+1. uses the same handler as cd.js, handle all the commands as "handler_name ls ..."
