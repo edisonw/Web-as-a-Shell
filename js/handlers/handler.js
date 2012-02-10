@@ -95,7 +95,7 @@ MasterHandler.prototype = {
 									this._commandStack=response.stack||0;
 								else
 									this._commandStack=0;
-								console.log(this._commandStack);
+								console.log("Stack Size: "+this._commandStack);
 								if(this._commandStack>0){
 									this.currentCommand=tokens[0];
 								}else{

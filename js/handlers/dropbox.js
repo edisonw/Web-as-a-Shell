@@ -53,13 +53,17 @@ DropboxHandler.prototype={
 	show:function(tokens,inputString){
 		var here=this;
 		if(tokens.length<3){
-			this.getApi(function(err,success){
-				if(success){
-					handler.postProcessInput(inputString,{result:"API Key: "+here.api_key+"<br />API Secret: "+here.api_secret+"<br/>Login:"});
-				}else{
-					handler.postProcessInput(inputString,{result:"Error: "+err});	
-				}
-			});
+			if(!this.api_key || !this.api_secret){
+				this.getApi(function(err,success){
+					if(success){
+						handler.postProcessInput(inputString,{result:"API Key: "+here.api_key+"<br />API Secret: "+here.api_secret+"<br/>Login:"});
+					}else{
+						handler.postProcessInput(inputString,{result:"Error: "+err});	
+					}
+				});
+			}else{
+				handler.postProcessInput(inputString,{result:"API Key: "+here.api_key+"<br />API Secret: "+here.api_secret+"<br/>Login:"});
+			}
 		}
 	},
 	getApiKey:function(cb){
