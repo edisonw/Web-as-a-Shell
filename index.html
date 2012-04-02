@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=640" />
+
+    <link rel="stylesheet" href="stylesheets/core.css" media="screen"/>
+    <link rel="stylesheet" href="stylesheets/mobile.css" media="handheld, only screen and (max-device-width:640px)"/>
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css"/>
+
+    <script type="text/javascript" src="javascripts/modernizr.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+    <script type="text/javascript" src="javascripts/headsmart.min.js"></script>
+    <script type="text/javascript">
+      $(document).ready(function () {
+        $('#main_content').headsmart()
+      })
+    </script>
+    <title>Web-as-a-shell by wzsddtc2</title>
+  </head>
+
+  <body>
+    <a id="forkme_banner" href="https://github.com/wzsddtc2/Web-as-a-Shell">Fork Me on GitHub</a>
+    <div class="shell">
+
+      <header>
+        <span class="ribbon-outer">
+          <span class="ribbon-inner">
+            <h1>Web-as-a-shell</h1>
+            <h2>Fun project that allows one to use the web services using shell commands</h2>
+          </span>
+          <span class="left-tail"></span>
+          <span class="right-tail"></span>
+        </span>
+      </header>
+
+      <section id="downloads">
+        <span class="inner">
+          <a href="https://github.com/wzsddtc2/Web-as-a-Shell/zipball/master" class="zip"><em>download</em> .ZIP</a><a href="https://github.com/wzsddtc2/Web-as-a-Shell/tarball/master" class="tgz"><em>download</em> .TGZ</a>
+        </span>
+      </section>
+
+      <span class="banner-fix"></span>
+
+      <section id="main_content">
+        <h3>How to use Web as a Shell?</h3>
+
+<ol>
+<li><p>Download/clone the code to a local directory.</p></li>
+<li><p>Open index.html in Chrome and enjoy. -there's no server side of this. </p></li>
+<li><p>Commands are handled by "handlers", which are automatic loaded when called. They can be dynamically dropped into ./js/handlers. For example, all commands that starts with user will be handled by user.js inside handlers folder.</p></li>
+<li><p>Commands can interact with other commands just like you would do it in a shell.</p></li>
+<li><p>To store sensitive information, use the user command. </p></li>
+</ol><p>Initial Goal: build a basic framework to have dropbox credentials stored and use them in command line. The project should potentially be used in Node.js as well. </p>
+
+<h3>user.js - handles user creation, login, and key management.</h3>
+
+<hr><ol>
+<li>user create username - create a user and generate a key for encrypting user data, all the user data are encrypted using this key, the key itself is encrypted using the password.</li>
+<li>user login username - login as username, upon successful login, the key will be decrypted for the current session.</li>
+</ol><h3>dropbox.js - uses user handler to store user dropbox information and acts as a wrapper for dropbox api.</h3>
+
+<hr><ol>
+<li>dorpbox use api_key api_secret to initialize the handler. - one time. </li>
+<li>dropbox login username - to authenticate an account for the current api. -one time.</li>
+<li>dropbox cd ... allows dropbox to act as a folder and interface with cd.js. </li>
+<li>dropbox ls ... allows dropbox to act as a folder and interface with ls.js. </li>
+</ol><h3>cd.js - allows changing the base handler and make shortcuts, perhaps for folder options.</h3>
+
+<hr><ol>
+<li>cd handler_name will make the rest of the cd command to be handled as "handler_name cd ..." </li>
+<li>cd ~ will reset the handler for cd.</li>
+</ol><h3>ls.js - allows changing the base handler and make shortcuts, perhaps for folder options.</h3>
+
+<hr><ol>
+<li>uses the same handler as cd.js, handle all the commands as "handler_name ls ..."</li>
+</ol>
+      </section>
+
+      <footer>
+        <span class="ribbon-outer">
+          <span class="ribbon-inner">
+            <p>this project by <a href="https://github.com/wzsddtc2">wzsddtc2</a> can be found on <a href="https://github.com/wzsddtc2/Web-as-a-Shell">GitHub</a></p>
+          </span>
+          <span class="left-tail"></span>
+          <span class="right-tail"></span>
+        </span>
+        <p>Generated with <a href="http://pages.github.com">GitHub Pages</a> using Merlot</p>
+        <span class="octocat"></span>
+      </footer>
+
+    </div>
+
+    
+  </body>
+</html>
