@@ -8,5 +8,12 @@ persistence.schemaSync(null, function () {
 	'use strict';
 	$(function () {
 		terminal = new ReadLine({htmlForInput: DefaultInputHtml, handler: handler});
+		if(Parse.User.current()){
+			handler.loadSubHandler("user",null,null,function(isSuccessful){
+				if(isSuccessful){
+					terminal.processInput("sync restore");				
+				}
+			});
+		}
 	});
 });

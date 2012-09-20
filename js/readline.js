@@ -78,8 +78,9 @@ ReadLine.prototype = {
 	// Return the handler's response.
 	processInput: function (value) {
 		var response = this.inputHandler.apply(value,this);
-		if (response !== false)
+		if (response !== false){
 			this.postProcessInput(value, response);
+		}
 	},
 	postProcessInput: function (value,response){
 		if (!response || !this.insertResponse(response.result)) {

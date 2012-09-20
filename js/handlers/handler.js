@@ -20,10 +20,11 @@ MasterHandler.prototype = {
 				if(tokens.length<2){
 					return {result:"You can use \"handler set property value\" to set options for the master handler for this session."};
 				}else{
-					if(this[tokens[1]])
+					if(this[tokens[1]]){
 						return this[tokens[1]](tokens,inputString);
-					else
+					}else{
 						return {result:"Invalid command to handler."};
+					}
 				}
 			}else{
 				return this[this.command](tokens,inputString);
@@ -44,14 +45,25 @@ MasterHandler.prototype = {
 				}
 			}
 		},
-		loadSubHandler:function(name,inputString,callbackObj){
+		loadSubHandler:function(name,inputString,handlerCallBack,onFinishCallBack){
 			var here=this;
 			this.loadHandlerResourceFile("./js/handlers/"+name+".js",
 					function(){
 				if(here.subHandlers[name]){
-					callbackObj.postProcessInput(inputString,here.apply(inputString,false));
-				}else
-					callbackObj.postProcessInput(inputString,{result:"Command "+name+" handler failed to load"});
+					if(handlerCallBack){
+						handlerCallBack.postProcessInput(inputString,here.apply(inputString,false));
+					}else{
+						console.log(name+" handler loaded.");
+					}
+					if(onFinishCallBack){
+						onFinishCallBack(true);
+					}
+				}else{
+					handlerCallBack.postProcessInput(inputString,{result:"Command "+name+" handler failed to load"});
+					if(onFinishCallBack){
+						onFinishCallBack(false);
+					}
+				}
 			},
 			function(){
 				callbackObj.postProcessInput(inputString,{result:"shell: command \""+name+"\" not found."});
