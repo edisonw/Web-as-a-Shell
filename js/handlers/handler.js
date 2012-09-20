@@ -66,7 +66,7 @@ MasterHandler.prototype = {
 				}
 			},
 			function(){
-				callbackObj.postProcessInput(inputString,{result:"shell: command \""+name+"\" not found."});
+				handlerCallBack.postProcessInput(inputString,{result:"shell: command \""+name+"\" not found."});
 			}
 			);
 		},

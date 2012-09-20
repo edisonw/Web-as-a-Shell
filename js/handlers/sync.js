@@ -1,6 +1,7 @@
 var SyncHandler=function(){
 	this.ptr = 0;
 	this.command = "";
+	this.temp = null;
 };
 SyncHandler.prototype={
 	_process: function (inputString, cb) {
@@ -30,8 +31,38 @@ SyncHandler.prototype={
 			return this[this.command](tokens, inputString);
 		}
 	},
+	login:function(tokens,inputString){
+		var here=this;
+		if(this.ptr==0){
+			if(!handler.subHandlers.user && handler.subHandlers.user.name && tokens.length==3){
+				return {result:"Please login first or supply a username as the second parameter."};	
+			}
+			if(tokens.length==3){
+				this.temp=tokens[2];
+			}else{
+				this.temp=handler.subHandlers.user.name;
+			}
+			this.command = "login";
+			this.ptr = 1;
+			return {result: "Password:", stack: 1, more: true, command: "sync", promptType: "password"};
+		}else{
+			Parse.User.this(here.temp,inputString,{
+				success: function(user) {
+					here.ptr=0;
+					here.command=null;
+					handler.postProcessInput(inputString, {result: "Login successful."});	
+				},
+				error: function(user, error) {
+					here.ptr=0;
+					here.command=null;
+					handler.postProcessInput(inputString, {result: "Error: " + error.code + " " + error.message});
+				}
+			});
+		}
+	},
 	logout:function(tokens,inputString){
 		Parse.User.logOut();
+		return {result:"Success."};
 	},
 	autologin:function(tokens,inputString){
 

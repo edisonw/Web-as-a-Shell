@@ -89,9 +89,9 @@ UserHandler.prototype = {
 			}
 		}
 	},
-	verify_keyHash:function(user,token){
-
-	}
+	login_using_keyHash:function(user,token,callback){
+		
+	},
 	create: function (tokens, inputString) {
 		'use strict';
 		var here = this, name, psw;
