@@ -149,10 +149,10 @@ UserHandler.prototype = {
 							this.temp = "";
 							this.ptr = 0;
 							persistence.flush(function (err) {
-								terminal.user = handler.subHandlers.user.current_user;
-								terminal.prefix = handler.subHandlers.user.current_user;
+								//terminal.user = handler.subHandlers.user.current_user;
+								//terminal.prefix = handler.subHandlers.user.current_user;
 								if(!err){
-									handler.postProcessInput(inputString, {result: "User Created."});
+									handler.postProcessInput(inputString, {result: "User Created; You may use it to login now."});
 								}else{
 									handler.postProcessInput(inputString, {result: "User cannot be created: "+err});
 								}
@@ -169,6 +169,9 @@ UserHandler.prototype = {
 		var here=this;
 		if(!val || !key){
 			return {result:"Cannot encrypt api information."};
+		}
+		if(!here.current_user.name){
+			return {result:"User not logged in."}
 		}
 		this.getPreference(key,function(err,result){
 			if(!err){

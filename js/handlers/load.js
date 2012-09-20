@@ -10,7 +10,7 @@ LoadHandler.prototype = {
 		if (tokens.length < 2) {
 			return {result: "Please load an handler using \"load handler-url\"."};
 		} else {
-			return this._load(tokens[1], cb);
+			return this.load(tokens[1], cb);
 		}
 	},
 	load: function (type,f, cb) {

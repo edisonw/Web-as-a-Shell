@@ -26,10 +26,11 @@ DropboxHandler.prototype={
 					return {result:"Dropbox API Wrapper. Supported Operations: show, use,login, logout, Supported in Folder Operations: ls, cd, get, put."};
 				}
 			}else{
-				if(this[tokens[1]])
+				if(this[tokens[1]]){
 					return this[tokens[1]](tokens,inputString);
-				else
+				}else{
 					return {result:"Invalid command to dropbox handler."};
+				}
 			}
 		}else{
 			return this[this.command](tokens,inputString);
@@ -199,7 +200,7 @@ DropboxHandler.prototype={
 	},
 	help:function(tokens,inputString){
 		if(tokens.length<3){
-			return {result:"Enables Dropbox"};
+			return {result:"Enables Dropbox commands, you have to login first."};
 		}else{
 			return false;
 		}
