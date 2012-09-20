@@ -11,7 +11,7 @@ persistence.schemaSync(null, function () {
 		if(Parse.User.current()){
 			handler.loadSubHandler("user",null,null,function(isSuccessful){
 				if(isSuccessful){
-					terminal.processInput("sync restore");				
+					terminal.processInput("sync autologin");				
 				}
 			});
 		}
