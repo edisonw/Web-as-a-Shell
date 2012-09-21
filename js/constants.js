@@ -17,12 +17,14 @@ var DefaultInputHtml = function (prefix, stack, location, type) {
   if (stack === 0) {
     linePrompt += "<p class=\"response\">" + prefix + "@127.0.0.1" + " " + location + "</p>" +
       "<span class='prompt'> ></span>";
+      return "<br /><div class='line'>" + linePrompt + "<input type='" + t + "' class='readLine active' />" + "</div>";
   } else {
     for (i = 0; i <= stack; i += 1) {
       linePrompt += "<span class='prompt'>.</span>";
     }
+    return "<div class='line'>" + linePrompt + "<input type='" + t + "' class='readLine active' />" + "</div>";
   }
-  return "<div class='line'>" + linePrompt + "<input type='" + t + "' class='readLine active' />" + "</div>";
+
 };
 
 var ResetHandlerStack = function (aHandler) {
