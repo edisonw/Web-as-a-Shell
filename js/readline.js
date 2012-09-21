@@ -83,7 +83,7 @@ ReadLine.prototype = {
 		}
 	},
 	postProcessInput: function (value,response){
-		if (!response || !this.insertResponse(response.result)) {
+		if (!response || !this.insertResponse(response)) {
 			return;
 		}
 		// Save to the command history...
@@ -93,8 +93,9 @@ ReadLine.prototype = {
 				this.historyPtr = this.history.length;
 			}
 		}
-		if(response.prefix)
+		if(response.prefix){
 			this.prefix = response.prefix;
+		}
 		if(response.location){
 			this.location = response.location;
 		}
@@ -107,6 +108,11 @@ ReadLine.prototype = {
 	},
 	insertResponse: function (response) {
 		console.log(response);
+		var responseImage=response.image;
+		if(responseImage){
+			this.activeLine.parent().append("<p class='response'>"+"<img src='"+responseImage+"' class='responseImage' max-height='200px' /></p>");
+		}
+		response=response.result;
 		if (response) {
 			if (response.length < 3) {
 				this.activeLine.parent().append("<p class='response'></p>");

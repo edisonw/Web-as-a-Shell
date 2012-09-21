@@ -40,13 +40,13 @@ SyncHandler.prototype={
 			if(tokens.length==3){
 				this.temp=tokens[2];
 			}else{
-				this.temp=handler.subHandlers.user.name;
+				this.temp=handler.subHandlers.user.getUser().name;
 			}
 			this.command = "login";
 			this.ptr = 1;
 			return {result: "Password:", stack: 1, more: true, command: "sync", promptType: "password"};
 		}else{
-			Parse.User.this(here.temp,inputString,{
+			Parse.User.logIn(here.temp,inputString,{
 				success: function(user) {
 					here.ptr=0;
 					here.command=null;
@@ -69,7 +69,7 @@ SyncHandler.prototype={
 	},
 	link:function (tokens,inputString){
 		var here=this;
-		if(!handler.subHandlers.user){
+		if(!handler.subHandlers.user.getUser()){
 			return {result:"Please login first before you can link an account."};	
 		}
 		if(Parse.User.current()){
@@ -82,7 +82,7 @@ SyncHandler.prototype={
 			}else{
 				if(this.ptr==1 && this.command=="link"){
 					var user = new Parse.User();
-					var local=handler.subHandlers.user.current_user;
+					var local=handler.subHandlers.user.getUser();
 					user.set("username", local.name);
 					user.set("password", inputString);
 					user.set("key_phrase",local.key_phrase);
@@ -97,7 +97,7 @@ SyncHandler.prototype={
 						error: function(user, error) {
 							here.ptr=0;
 							here.command=null;
-							handler.postProcessInput(inputString, {result: "Error: " + error.code + " " + error.message});
+							handler.postProcessInput(inputString, {result: "Sync Error: " + error.code + " " + error.message});
 						}
 					});
 				}

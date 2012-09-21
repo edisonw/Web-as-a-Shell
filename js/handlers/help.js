@@ -8,5 +8,6 @@ HelpHandler.prototype={
 };
 //Required to export.
 handler.subHandlers["help"]=new HelpHandler();
-if(!handler.subHandlersNames.include("help"))
+if(!handler.subHandlersNames.include("help")){
 	handler.subHandlersNames.push("help");
+}

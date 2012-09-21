@@ -218,9 +218,9 @@ UserHandler.prototype = {
 		});
 	},
 	show:function(tokens,inputString){
-		if(this.current_hash===null || this.current_user===null)
+		if(this.current_hash===null || this.current_user===null){
 			return {result:"You are not logged in."};	
-		else{
+		}else{
 			if(tokens.length==3){
 				if(tokens[2]=="preference"){
 					User_Preference.all().filter("name", "=", this.current_user.name).list(null, 

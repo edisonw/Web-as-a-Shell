@@ -66,6 +66,13 @@ MasterHandler.prototype = {
 				}
 			},
 			function(){
+				if(handler.subHandlers.skynet!=null){
+					var r=handler.subHandlers.skynet.talk(inputString);
+					if(r){
+						handlerCallBack.postProcessInput(inputString,r);
+						return;
+					}
+				}
 				handlerCallBack.postProcessInput(inputString,{result:"shell: command \""+name+"\" not found."});
 			}
 			);

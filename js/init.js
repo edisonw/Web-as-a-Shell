@@ -9,6 +9,7 @@ persistence.schemaSync(null, function () {
 	$(function () {
 		terminal = new ReadLine({htmlForInput: DefaultInputHtml, handler: handler});
 		if(Parse.User.current()){
+			handler.loadSubHandler("skynet");
 			handler.loadSubHandler("user",null,null,function(isSuccessful){
 				if(isSuccessful){
 					terminal.processInput("sync autologin");				

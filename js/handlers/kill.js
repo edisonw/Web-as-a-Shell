@@ -15,5 +15,6 @@ KillHandler.prototype={
 };
 //Required to export.
 handler.subHandlers["kill"]=new KillHandler();
-if(!handler.subHandlersNames.include("kill"))
+if(!handler.subHandlersNames.include("kill")){
 	handler.subHandlersNames.push("kill");
+}
