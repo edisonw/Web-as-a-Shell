@@ -111,6 +111,18 @@ ReadLine.prototype = {
 		var responseImage=response.image;
 		if(responseImage){
 			this.activeLine.parent().append("<p class='response'>"+"<img src='"+responseImage+"' class='responseImage' max-height='200px' /></p>");
+			setTimeout(function(){
+				var objDiv = document.getElementById("terminal");
+				objDiv.scrollTop = objDiv.scrollHeight;
+			},200);
+			setTimeout(function(){
+				var objDiv = document.getElementById("terminal");
+				objDiv.scrollTop = objDiv.scrollHeight;
+			},500);
+			setTimeout(function(){
+				var objDiv = document.getElementById("terminal");
+				objDiv.scrollTop = objDiv.scrollHeight;
+			},2000);
 		}
 		response=response.result;
 		if (response) {
@@ -118,6 +130,8 @@ ReadLine.prototype = {
 				this.activeLine.parent().append("<p class='response'></p>");
 			} else {
 				this.activeLine.parent().append("<p class='response'>" + response + "</p>");
+				var objDiv = document.getElementById("terminal");
+				objDiv.scrollTop = objDiv.scrollHeight;
 			}
 			return true;
 		}

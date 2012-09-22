@@ -34,7 +34,7 @@ SyncHandler.prototype={
 	login:function(tokens,inputString){
 		var here=this;
 		if(this.ptr==0){
-			if(!handler.subHandlers.user && handler.subHandlers.user.name && tokens.length==3){
+			if((!(handler.subHandlers.user.getUser() && handler.subHandlers.user.getUser().name)) && tokens.length!=3){
 				return {result:"Please login first or supply a username as the second parameter."};	
 			}
 			if(tokens.length==3){
