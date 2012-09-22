@@ -27,10 +27,26 @@ MemeHandler.prototype={
 		}
 	},
 	meme:function(inputString){
+		var here=this;
 		$.ajax({    
 			type:'get',                                                                                                                                                                      
 			url: "http://version1.api.memegenerator.net/Generators_Search?q="+encodeURIComponent(inputString),                                                                                                                                                                                       
-			success: function(data) { console.log(data.responseText);},                                                                                                                                                                                       
+			success: function(data) {
+				var start=data.responseText.indexOf("<p>")+3;
+				var end=data.responseText.indexOf("</p>");
+				var value=JSON.parse(data.responseText.substring(start,end));
+				if(value && value.success){
+					if(value.result.length==0){
+						here.google(inputString);
+					}else{
+						var items=value.result;
+						var item = items[Math.floor(Math.random()*items.length)];
+						handler.postProcessInput(inputString,{result:item.displayName+" (Source: Meme Generator)",image:item.imageUrl});
+					}
+				}else{
+					handler.postProcessInput(inputString,{result:"Error: Invalid data returned."});
+				}
+			},                                                                                                                                                                                       
 			error: function() { console.log('Uh Oh!'); }                                                                                                          
 		});
 	},
@@ -38,7 +54,7 @@ MemeHandler.prototype={
 		$.getJSON('https://ajax.googleapis.com/ajax/services/search/images?safe=off&v=1.0&q='+encodeURIComponent("meme "+inputString)+"&callback=?", function(data) {
 			var items=data.responseData.results;
 			var item = items[Math.floor(Math.random()*items.length)];
-			handler.postProcessInput(inputString,{result:item.contentNoFormatting,image:item.url});
+			handler.postProcessInput(inputString,{result:item.contentNoFormatting+ " (Source: Google)",image:item.url});
 		});
 	}
 };
