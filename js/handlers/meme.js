@@ -54,7 +54,11 @@ MemeHandler.prototype={
 		$.getJSON('https://ajax.googleapis.com/ajax/services/search/images?safe=off&v=1.0&q='+encodeURIComponent("meme "+inputString)+"&callback=?", function(data) {
 			var items=data.responseData.results;
 			var item = items[Math.floor(Math.random()*items.length)];
-			handler.postProcessInput(inputString,{result:item.contentNoFormatting+ " (Source: Google)",image:item.url});
+			if(item){
+				handler.postProcessInput(inputString,{result:item.contentNoFormatting+ " (Source: Google)",image:item.url});
+			}else{
+				handler.postProcessInput(inputString,{result:"No results find or invalid data returned."});
+			}
 		});
 	}
 };
